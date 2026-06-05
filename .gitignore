@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+.swiftpm/
+*.xcodeproj
+xcuserdata/
+DerivedData/
+
+# Large build/vendor artifacts — the xcframework is attached to GitHub Releases, not committed.
+whisper.xcframework/
+*.xcframework.zip
+vendor/whisper.cpp/
+Models/
+*.bin
+*.gguf
