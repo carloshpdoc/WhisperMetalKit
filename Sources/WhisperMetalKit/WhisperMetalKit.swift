@@ -6,8 +6,7 @@
 /// CMake. WhisperMetalKit closes that gap by wrapping the official, Metal-enabled
 /// `whisper.xcframework` as a binary target behind a small, modern Swift API.
 ///
-/// Status: scaffolding. The `whisper.xcframework` binary target and the transcription API land next.
 public enum WhisperMetalKit {
     /// Package version.
-    public static let version = "0.0.1"
+    public static let version = "0.1.0"
 }

@@ -11,10 +11,14 @@ let package = Package(
         .library(name: "WhisperMetalKit", targets: ["WhisperMetalKit"]),
     ],
     targets: [
-        // Metal-enabled whisper.cpp, built via Scripts/build-xcframework.sh.
-        // For development this points at the locally built framework; releases switch to a
-        // .binaryTarget(url:checksum:) attached to a GitHub Release (see Scripts/build-xcframework.sh).
-        .binaryTarget(name: "whisper", path: "whisper.xcframework"),
+        // Metal-enabled whisper.cpp, built by Scripts/build-xcframework.sh and attached to the
+        // matching GitHub Release. For local development against a freshly built framework, swap
+        // this for `.binaryTarget(name: "whisper", path: "whisper.xcframework")`.
+        .binaryTarget(
+            name: "whisper",
+            url: "https://github.com/carloshpdoc/WhisperMetalKit/releases/download/v0.1.0/whisper.xcframework.zip",
+            checksum: "f31972d9cb88d4b5ee57174934e8a6dc2c243b0b84a2254b06a6b9e3612e7197"
+        ),
         .target(name: "WhisperMetalKit", dependencies: ["whisper"]),
         .testTarget(
             name: "WhisperMetalKitTests",

@@ -28,9 +28,35 @@ Compiling whisper.cpp's Metal shaders inside SPM has been an [open TODO upstream
 - ✅ Tracks upstream whisper.cpp releases (binary target → bump URL + checksum)
 - ✅ iOS 16+ / macOS 13+ (visionOS / tvOS to follow)
 
+## Usage
+
+```swift
+import WhisperMetalKit
+
+// 1. Get a model (one-time download; cache the URL). Quantized variants are smaller.
+let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+let modelURL = try await WhisperModelDownloader.download(.mediumQuantized, to: cache)
+
+// 2. Load it once (runs on the Metal GPU by default).
+let model = try WhisperModel(modelPath: modelURL)
+
+// 3. Transcribe. Feed 16 kHz mono Float samples — or decode a file with WhisperAudio.
+let samples = try WhisperAudio.samples(fromFile: recordingURL)   // m4a, wav, mp3, caf…
+let result = try await model.transcribe(samples: samples, options: .init(language: "pt"))
+
+print(result.text)
+for segment in result.segments {
+    print("[\(segment.start)s–\(segment.end)s] \(segment.text)")
+}
+```
+
+Pass `language: nil` to auto-detect, or `translate: true` to translate to English.
+
 ## Status
 
-🚧 Early development. The `whisper.xcframework` binary target and the transcription API are landing now. Not yet ready for production use.
+Working: Metal GPU transcription verified end-to-end (model load → decode → segments). The
+`whisper.xcframework` ships all Apple slices (iOS device + sim, macOS, visionOS, tvOS). Early days —
+API may still change before 1.0.
 
 ## License
 
