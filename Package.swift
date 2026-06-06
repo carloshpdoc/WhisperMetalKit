@@ -11,9 +11,15 @@ let package = Package(
         .library(name: "WhisperMetalKit", targets: ["WhisperMetalKit"]),
     ],
     targets: [
-        // The Swift API layer. The Metal-enabled `whisper.xcframework` binary target is added
-        // here once it is built/hosted (see Scripts/build-xcframework.sh).
-        .target(name: "WhisperMetalKit"),
-        .testTarget(name: "WhisperMetalKitTests", dependencies: ["WhisperMetalKit"]),
+        // Metal-enabled whisper.cpp, built via Scripts/build-xcframework.sh.
+        // For development this points at the locally built framework; releases switch to a
+        // .binaryTarget(url:checksum:) attached to a GitHub Release (see Scripts/build-xcframework.sh).
+        .binaryTarget(name: "whisper", path: "whisper.xcframework"),
+        .target(name: "WhisperMetalKit", dependencies: ["whisper"]),
+        .testTarget(
+            name: "WhisperMetalKitTests",
+            dependencies: ["WhisperMetalKit"],
+            resources: [.copy("Resources/jfk.wav")]
+        ),
     ]
 )
