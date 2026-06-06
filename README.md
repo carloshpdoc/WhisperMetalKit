@@ -60,4 +60,4 @@ API may still change before 1.0.
 
 ## License
 
-[MIT](LICENSE). whisper.cpp and ggml are also MIT-licensed.
+[Apache License 2.0](LICENSE). whisper.cpp and ggml are MIT-licensed (compatible).
