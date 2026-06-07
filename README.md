@@ -8,17 +8,39 @@ On-device speech-to-text for Apple platforms, powered by [whisper.cpp](https://g
 
 ## Why
 
-If you want OpenAI's Whisper running locally on iPhone/Mac via SPM today, your options are rough:
+This started as a real problem in a shipping app: `large-v3-turbo` ran great on macOS via
+[WhisperKit](https://github.com/argmaxinc/WhisperKit) (CoreML), but on iPhone it **wouldn't run at all** —
+the Apple Neural Engine couldn't compile the encoder (`std::bad_alloc` → CoreML **error -14**), and forcing
+the GPU compute units crashed the process inside MetalPerformanceShadersGraph (an **uncatchable abort**).
+The model was fine; CoreML was hitting hardware/compiler limits on the phone.
 
-| Option | Runtime | Metal GPU | Maintained | Notes |
-|--------|---------|:---------:|:----------:|-------|
-| [`ggerganov/whisper.spm`](https://github.com/ggerganov/whisper.spm) | whisper.cpp | ❌ | ❌ (2024) | `ggml-metal` is explicitly excluded — "I can't figure out how to build it in SPM" |
-| [`exPHAT/SwiftWhisper`](https://github.com/exPHAT/SwiftWhisper) | whisper.cpp | ❌ | ❌ (2024) | CPU + CoreML encoder, stale |
-| [`argmaxinc/WhisperKit`](https://github.com/argmaxinc/WhisperKit) | **CoreML** | ⚠️ ANE/GPU via CoreML | ✅ | Great, but CoreML-only — some large models fail to compile on the iPhone ANE (`std::bad_alloc` / CoreML `-14`) or crash in MPSGraph |
+whisper.cpp has a different runtime — **GGML with a Metal backend** — that never touches CoreML, the ANE
+compiler, or MPSGraph, so those failure modes simply don't exist. Same Whisper weights, same iPhone, the
+model just runs (in our case **16.8 s of audio → ~1.1 s** on an A19 Pro). The catch is the Swift packaging:
 
-Compiling whisper.cpp's Metal shaders inside SPM has been an [open TODO upstream for two years](https://github.com/ggerganov/whisper.spm/blob/master/Package.swift), which is why the project moved to a CMake-built **xcframework**.
+| Option | Runtime | Metal | Swift API | Maintained | Via SPM |
+|--------|---------|:-----:|:---------:|:----------:|:-------:|
+| [whisper.cpp official](https://github.com/ggml-org/whisper.cpp/releases) `xcframework` | GGML | ✅ | ❌ raw C | ✅ | ⚠️ zip asset, not a package |
+| [`ggerganov/whisper.spm`](https://github.com/ggerganov/whisper.spm/blob/master/Package.swift) | GGML | ❌ Metal excluded (2-yr TODO) | C | ❌ (2024) | ✅ |
+| [`exPHAT/SwiftWhisper`](https://github.com/exPHAT/SwiftWhisper) | GGML | ❌ CPU + CoreML encoder | ✅ | ❌ (2024) | ✅ |
+| [`argmaxinc/WhisperKit`](https://github.com/argmaxinc/WhisperKit) | **CoreML** | via CoreML (ANE/GPU) | ✅ | ✅ | ✅ |
+| **WhisperMetalKit** | **GGML** | ✅ | ✅ async | ✅ | ✅ one line |
 
-**WhisperMetalKit** closes the gap: it wraps the official, Metal-enabled `whisper.xcframework` as an SPM `binaryTarget` behind a small, modern, async Swift API. You get the real GGML/Metal runtime — including models that the CoreML path can't compile — with a one-line SPM install.
+So this package is **not** "the only Metal whisper.cpp build" — whisper.cpp itself now publishes a
+Metal-enabled `whisper.xcframework` on its releases. What's missing is a **maintained Swift package that
+exposes that GGML/Metal runtime behind a modern API**: the upstream xcframework is raw C, and the existing
+SPM wrappers are stale and CPU-only. WhisperKit gives you the lovely API — but via CoreML, i.e. the path
+that failed above.
+
+**WhisperMetalKit** fills exactly that slot: it wraps the Metal `whisper.xcframework` as an SPM
+`binaryTarget` and adds a small, modern, async Swift API (plus audio resampling and a model downloader), so
+you can use whisper.cpp's GGML/Metal runtime as easily as WhisperKit — and run models CoreML can't compile
+on-device.
+
+> **WhisperKit vs WhisperMetalKit:** use WhisperKit when CoreML/ANE works for your model and device (often
+> excellent, and it uses the ANE). Reach for WhisperMetalKit when you want the GGML/Metal runtime — larger
+> or quantized models that CoreML can't compile on the phone, GGUF support, or to dodge the `-14` / MPSGraph
+> failures above.
 
 ## Goals
 
