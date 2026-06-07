@@ -12,3 +12,6 @@ vendor/whisper.cpp/
 Models/
 *.bin
 *.gguf
+
+# Internal launch / marketing material — kept local only, not published.
+docs/launch-and-positioning.md
