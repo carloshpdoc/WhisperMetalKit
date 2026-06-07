@@ -1,6 +1,6 @@
 # WhisperMetalKit
 
-On-device speech-to-text for Apple platforms, powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with **Metal GPU acceleration** — distributed via the **Swift Package Manager**.
+On-device speech-to-text for Apple platforms, powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with **Metal GPU acceleration**, distributed via the **Swift Package Manager**.
 
 ```swift
 .package(url: "https://github.com/carloshpdoc/WhisperMetalKit.git", from: "0.1.0")
@@ -9,12 +9,12 @@ On-device speech-to-text for Apple platforms, powered by [whisper.cpp](https://g
 ## Why
 
 This started as a real problem in a shipping app: `large-v3-turbo` ran great on macOS via
-[WhisperKit](https://github.com/argmaxinc/WhisperKit) (CoreML), but on iPhone it **wouldn't run at all** —
+[WhisperKit](https://github.com/argmaxinc/WhisperKit) (CoreML), but on iPhone it **wouldn't run at all**:
 the Apple Neural Engine couldn't compile the encoder (`std::bad_alloc` → CoreML **error -14**), and forcing
 the GPU compute units crashed the process inside MetalPerformanceShadersGraph (an **uncatchable abort**).
 The model was fine; CoreML was hitting hardware/compiler limits on the phone.
 
-whisper.cpp has a different runtime — **GGML with a Metal backend** — that never touches CoreML, the ANE
+whisper.cpp has a different runtime, **GGML with a Metal backend**, that never touches CoreML, the ANE
 compiler, or MPSGraph, so those failure modes simply don't exist. Same Whisper weights, same iPhone, the
 model just runs (in our case **16.8 s of audio → ~1.1 s** on an A19 Pro). The catch is the Swift packaging:
 
@@ -26,19 +26,19 @@ model just runs (in our case **16.8 s of audio → ~1.1 s** on an A19 Pro). The 
 | [`argmaxinc/WhisperKit`](https://github.com/argmaxinc/WhisperKit) | **CoreML** | via CoreML (ANE/GPU) | ✅ | ✅ | ✅ |
 | **WhisperMetalKit** | **GGML** | ✅ | ✅ async | ✅ | ✅ one line |
 
-So this package is **not** "the only Metal whisper.cpp build" — whisper.cpp itself now publishes a
+So this package is **not** "the only Metal whisper.cpp build". whisper.cpp itself now publishes a
 Metal-enabled `whisper.xcframework` on its releases. What's missing is a **maintained Swift package that
 exposes that GGML/Metal runtime behind a modern API**: the upstream xcframework is raw C, and the existing
-SPM wrappers are stale and CPU-only. WhisperKit gives you the lovely API — but via CoreML, i.e. the path
+SPM wrappers are stale and CPU-only. WhisperKit gives you the lovely API, but via CoreML, i.e. the path
 that failed above.
 
 **WhisperMetalKit** fills exactly that slot: it wraps the Metal `whisper.xcframework` as an SPM
 `binaryTarget` and adds a small, modern, async Swift API (plus audio resampling and a model downloader), so
-you can use whisper.cpp's GGML/Metal runtime as easily as WhisperKit — and run models CoreML can't compile
+you can use whisper.cpp's GGML/Metal runtime as easily as WhisperKit, and run models CoreML can't compile
 on-device.
 
 > **WhisperKit vs WhisperMetalKit:** use WhisperKit when CoreML/ANE works for your model and device (often
-> excellent, and it uses the ANE). Reach for WhisperMetalKit when you want the GGML/Metal runtime — larger
+> excellent, and it uses the ANE). Reach for WhisperMetalKit when you want the GGML/Metal runtime: larger
 > or quantized models that CoreML can't compile on the phone, GGUF support, or to dodge the `-14` / MPSGraph
 > failures above.
 
@@ -62,13 +62,13 @@ let modelURL = try await WhisperModelDownloader.download(.mediumQuantized, to: c
 // 2. Load it once (runs on the Metal GPU by default).
 let model = try WhisperModel(modelPath: modelURL)
 
-// 3. Transcribe. Feed 16 kHz mono Float samples — or decode a file with WhisperAudio.
+// 3. Transcribe. Feed 16 kHz mono Float samples, or decode a file with WhisperAudio.
 let samples = try WhisperAudio.samples(fromFile: recordingURL)   // m4a, wav, mp3, caf…
 let result = try await model.transcribe(samples: samples, options: .init(language: "pt"))
 
 print(result.text)
 for segment in result.segments {
-    print("[\(segment.start)s–\(segment.end)s] \(segment.text)")
+    print("[\(segment.start)s-\(segment.end)s] \(segment.text)")
 }
 ```
 
@@ -77,7 +77,7 @@ Pass `language: nil` to auto-detect, or `translate: true` to translate to Englis
 ## Status
 
 Working: Metal GPU transcription verified end-to-end (model load → decode → segments). The
-`whisper.xcframework` ships all Apple slices (iOS device + sim, macOS, visionOS, tvOS). Early days —
+`whisper.xcframework` ships all Apple slices (iOS device + sim, macOS, visionOS, tvOS). Early days;
 API may still change before 1.0.
 
 ## License
